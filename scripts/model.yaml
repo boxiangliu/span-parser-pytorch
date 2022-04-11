@@ -1,0 +1,28 @@
+data:
+  vocab: data/vocab.json
+  train: data/02-21.10way.clean
+  dev: data/22.auto.clean
+model:
+  word_dims: 50
+  tag_dims: 20
+  lstm_units: 200
+  hidden_units: 200
+  droprate: 0.5
+  unk_param: 0.8375
+  alpha: 1.0
+  beta: 0.0
+trainer:
+  epochs: 10
+  batch_size: 16
+  log_interval: 50
+  val_interval: 50
+  grad_clip: 1.0
+  gpus: 1
+logger:
+  project: span-parsing
+  name: run_1
+  notes: run Cross (2016) EMNLP 
+  save_dir: ../runs
+
+
+
