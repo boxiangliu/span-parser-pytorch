@@ -27,6 +27,8 @@ class SpanParser(pl.LightningModule):
             struct_out=2,
             label_out=self.fm.total_label_actions(),
             droprate=hparams.model.droprate,
+            alpha=hparams.model.alpha,
+            beta=hparams.model.beta,
         )
 
     def configure_optimizers(self):
@@ -36,12 +38,14 @@ class SpanParser(pl.LightningModule):
         batch_error = self.network(batch)
         return batch_error
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         batch_error = self(batch)
         self.log("train/loss", batch_error)
         return batch_error
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx):
         dev_acc = Parser.evaluate_corpus(batch, self.fm, self.network)
-        self.log("val/acc", dev_acc)
+        self.log("val/precision", dev_acc.precision())
+        self.log("val/recall", dev_acc.recall())
+        self.log("val/fscore", dev_acc.fscore())
         return dev_acc

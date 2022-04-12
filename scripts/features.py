@@ -167,7 +167,7 @@ class FeatureMapper(object):
         if index == 0:
             return "none"
         else:
-            return "label-" + self.ldict.keys()[index - 1]
+            return "label-" + list(self.ldict.keys())[index - 1]
 
     def sentence_sequences(self, sentence):
         """

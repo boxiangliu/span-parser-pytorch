@@ -53,7 +53,7 @@ class SpanParserDataModule(pl.LightningDataModule):
             collate_fn=lambda x: x,
         )
 
-    def dev_dataloader(self):
+    def val_dataloader(self):
         return DataLoader(
             self.dev_trees,
             batch_size=self.batch_size,

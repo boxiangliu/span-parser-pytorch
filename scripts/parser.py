@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
+import torch
 
 # import dynet
 from collections import defaultdict
@@ -255,8 +256,6 @@ class Parser(object):
         w = data["w"]
         t = data["t"]
         lstm_outputs = network.evaluate_recurrent(w, t, test=True)
-        fwd = lstm_outputs[:, :, : network.lstm_units]
-        back = lstm_outputs[:, :, network.lstm_units :]
 
         for step in range(2 * n - 1):
 
@@ -276,13 +275,12 @@ class Parser(object):
                     action = correct_action
                 else:
                     left, right = features
-                    scores = network.evaluate_struct(
-                        fwd,
-                        back,
-                        left,
-                        right,
-                        test=True,
-                    ).npvalue()
+                    scores = (
+                        network.evaluate_struct(lstm_outputs, left, right, test=True)
+                        .cpu()
+                        .detach()
+                        .numpy()[0]
+                    )
 
                     # sample from distribution
                     exp = np.exp(scores * alpha)
@@ -306,13 +304,12 @@ class Parser(object):
                 action = correct_action
             else:
                 left, right = features
-                scores = network.evaluate_label(
-                    fwd,
-                    back,
-                    left,
-                    right,
-                    test=True,
-                ).npvalue()
+                scores = (
+                    network.evaluate_label(lstm_outputs, left, right, test=True)
+                    .cpu()
+                    .detach()
+                    .numpy()[0]
+                )
                 if step < (2 * n - 2):
                     action_index = np.argmax(scores)
                 else:
@@ -343,8 +340,10 @@ class Parser(object):
         state = Parser(n)
 
         w, t = fm.sentence_sequences(sentence)
+        w = torch.LongTensor(w).to(next(network.parameters()).device)
+        t = torch.LongTensor(t).to(next(network.parameters()).device)
 
-        fwd, back = network.evaluate_recurrent(w, t, test=True)
+        lstm_outputs = network.evaluate_recurrent(w, t, test=True)
 
         for step in range(2 * n - 1):
 
@@ -354,25 +353,23 @@ class Parser(object):
                 action = "comb"
             else:
                 left, right = state.s_features()
-                scores = network.evaluate_struct(
-                    fwd,
-                    back,
-                    left,
-                    right,
-                    test=True,
-                ).npvalue()
+                scores = (
+                    network.evaluate_struct(lstm_outputs, left, right, test=True)
+                    .cpu()
+                    .detach()
+                    .numpy()[0]
+                )
                 action_index = np.argmax(scores)
                 action = fm.s_action(action_index)
             state.take_action(action)
 
             left, right = state.l_features()
-            scores = network.evaluate_label(
-                fwd,
-                back,
-                left,
-                right,
-                test=True,
-            ).npvalue()
+            scores = (
+                network.evaluate_label(lstm_outputs, left, right, test=True)
+                .cpu()
+                .detach()
+                .numpy()[0]
+            )
             if step < (2 * n - 2):
                 action_index = np.argmax(scores)
             else:
