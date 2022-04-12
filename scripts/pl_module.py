@@ -29,6 +29,7 @@ class SpanParser(pl.LightningModule):
             droprate=hparams.model.droprate,
             alpha=hparams.model.alpha,
             beta=hparams.model.beta,
+            dynamic_oracle=hparams.model.dynamic_oracle,
         )
 
     def configure_optimizers(self):

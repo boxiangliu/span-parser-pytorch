@@ -11,6 +11,7 @@ model:
   unk_param: 0.8375
   alpha: 1.0
   beta: 0.0
+  dynamic_oracle: False
 trainer:
   epochs: 10
   batch_size: 16
@@ -20,8 +21,8 @@ trainer:
   gpus: 1
 logger:
   project: span-parsing
-  name: run_1
-  notes: run Cross (2016) EMNLP 
+  name: run_2
+  notes: run Cross (2016) EMNLP without dynamic oracle 
   save_dir: ../runs
 
 

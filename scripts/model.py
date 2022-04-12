@@ -24,6 +24,7 @@ class Network(nn.Module):
         droprate=0,
         struct_spans=4,
         label_spans=3,
+        dynamic_oracle=True,
     ):
         super().__init__()
         self.word_count = word_count
@@ -39,6 +40,7 @@ class Network(nn.Module):
         self.alpha = alpha
         self.beta = beta
         self.droprate = droprate
+        self.dynamic_oracle = dynamic_oracle
 
         self.word_embed = nn.Embedding(word_count, word_dims)
         self.tag_embed = nn.Embedding(tag_count, tag_dims)
@@ -134,11 +136,13 @@ class Network(nn.Module):
         return scores
 
     def forward(self, batch):
-        explore = [
-            Parser.exploration(example, self.fm, self, alpha=self.alpha, beta=self.beta)
-            for example in batch
-        ]
-        batch = [example for (example, _) in explore]
+        if self.dynamic_oracle:
+            explore = [
+                Parser.exploration(example, self.fm, self, alpha=self.alpha, beta=self.beta)
+                for example in batch
+            ]
+            batch = [example for (example, _) in explore]
+
         errors = []
         for example in batch:
 
