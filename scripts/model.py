@@ -24,6 +24,7 @@ class Network(nn.Module):
         droprate=0,
         struct_spans=4,
         label_spans=3,
+        feature="subtract",
         dynamic_oracle=True,
     ):
         super().__init__()
@@ -40,10 +41,11 @@ class Network(nn.Module):
         self.alpha = alpha
         self.beta = beta
         self.droprate = droprate
+        self.feature = feature
         self.dynamic_oracle = dynamic_oracle
 
         self.word_embed = nn.Embedding(word_count, word_dims)
-        self.tag_embed = nn.Embedding(tag_count, tag_dims)
+        self.tag_embed = nn.Embedding(tag_count, tag_dims)  # POS tags
 
         self.lstm = nn.LSTM(
             input_size=word_dims + tag_dims,
@@ -94,13 +96,20 @@ class Network(nn.Module):
 
         fwd_span_out = []
         for left_index, right_index in zip(lefts, rights):
-            fwd_span_out.append(fwd_out[right_index] - fwd_out[left_index - 1])
+            if self.feature == "subtract":
+                fwd_span_out.append(fwd_out[right_index] - fwd_out[left_index - 1])
+            elif self.feature == "sum":
+                # Boxiang trying sum instead of subtraction.
+                fwd_span_out.append(fwd_out[left_index - 1 : right_index].sum(dim=0))
         # [N, lstm_units * struct_span]
         fwd_span_vec = torch.cat(fwd_span_out, dim=1)
 
         back_span_out = []
         for left_index, right_index in zip(lefts, rights):
-            back_span_out.append(back_out[left_index] - back_out[right_index + 1])
+            if self.feature == "subtract":
+                back_span_out.append(back_out[left_index] - back_out[right_index + 1])
+            elif self.feature == "sum":
+                back_span_out.append(back_out[left_index : right_index + 1].sum(dim=0))
         # [N, lstm_units * struct_span]
         back_span_vec = torch.cat(back_span_out, dim=1)
         hidden_input = torch.cat([fwd_span_vec, back_span_vec], dim=1)
@@ -117,13 +126,20 @@ class Network(nn.Module):
 
         fwd_span_out = []
         for left_index, right_index in zip(lefts, rights):
-            fwd_span_out.append(fwd_out[right_index] - fwd_out[left_index - 1])
+            if self.feature == "subtract":
+                fwd_span_out.append(fwd_out[right_index] - fwd_out[left_index - 1])
+            elif self.feature == "sum":
+                # Boxiang trying sum instead of subtraction.
+                fwd_span_out.append(fwd_out[right_index : left_index - 1].sum(dim=0))
         # [N, lstm_units * struct_span]
         fwd_span_vec = torch.cat(fwd_span_out, dim=1)
 
         back_span_out = []
         for left_index, right_index in zip(lefts, rights):
-            back_span_out.append(back_out[left_index] - back_out[right_index + 1])
+            if self.feature == "subtract":
+                back_span_out.append(back_out[left_index] - back_out[right_index + 1])
+            elif self.feature == "sum":
+                back_span_out.append(back_out[left_index : right_index + 1].sum(dim=0))
         # [N, lstm_units * struct_span]
         back_span_vec = torch.cat(back_span_out, dim=1)
 
@@ -138,7 +154,9 @@ class Network(nn.Module):
     def forward(self, batch):
         if self.dynamic_oracle:
             explore = [
-                Parser.exploration(example, self.fm, self, alpha=self.alpha, beta=self.beta)
+                Parser.exploration(
+                    example, self.fm, self, alpha=self.alpha, beta=self.beta
+                )
                 for example in batch
             ]
             batch = [example for (example, _) in explore]

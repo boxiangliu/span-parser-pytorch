@@ -11,6 +11,7 @@ model:
   unk_param: 0.8375
   alpha: 1.0
   beta: 0.0
+  feature: sum            # [subtract, sum]
   dynamic_oracle: False
 trainer:
   epochs: 10
@@ -21,8 +22,8 @@ trainer:
   gpus: 1
 logger:
   project: span-parsing
-  name: run_2
-  notes: run Cross (2016) EMNLP without dynamic oracle 
+  name: run_3
+  notes: run Cross (2016) EMNLP without dynamic oracle, and change span difference to span sum. 
   save_dir: ../runs
 
 
