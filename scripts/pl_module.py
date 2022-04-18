@@ -41,7 +41,6 @@ class SpanParser(pl.LightningModule):
         return batch_error
 
     def training_step(self, batch, batch_idx):
-        breakpoint()
         batch_error = self(batch)
         self.log("train/loss", batch_error)
         return batch_error
