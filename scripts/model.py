@@ -99,8 +99,10 @@ class Network(nn.Module):
             if self.feature == "subtract":
                 fwd_span_out.append(fwd_out[right_index] - fwd_out[left_index - 1])
             elif self.feature == "sum":
-                # Boxiang trying sum instead of subtraction.
                 fwd_span_out.append(fwd_out[left_index - 1 : right_index].sum(dim=0))
+            elif self.feature == "mean":
+                fwd_span_out.append(fwd_out[left_index - 1 : right_index].mean(dim=0))
+
         # [N, lstm_units * struct_span]
         fwd_span_vec = torch.cat(fwd_span_out, dim=1)
 
@@ -110,6 +112,9 @@ class Network(nn.Module):
                 back_span_out.append(back_out[left_index] - back_out[right_index + 1])
             elif self.feature == "sum":
                 back_span_out.append(back_out[left_index : right_index + 1].sum(dim=0))
+            elif self.feature == "mean":
+                back_span_out.append(back_out[left_index : right_index + 1].mean(dim=0))
+
         # [N, lstm_units * struct_span]
         back_span_vec = torch.cat(back_span_out, dim=1)
         hidden_input = torch.cat([fwd_span_vec, back_span_vec], dim=1)
@@ -129,8 +134,9 @@ class Network(nn.Module):
             if self.feature == "subtract":
                 fwd_span_out.append(fwd_out[right_index] - fwd_out[left_index - 1])
             elif self.feature == "sum":
-                # Boxiang trying sum instead of subtraction.
                 fwd_span_out.append(fwd_out[right_index : left_index - 1].sum(dim=0))
+            elif self.feature == "mean":
+                fwd_span_out.append(fwd_out[right_index : left_index - 1].mean(dim=0))
         # [N, lstm_units * struct_span]
         fwd_span_vec = torch.cat(fwd_span_out, dim=1)
 
@@ -140,6 +146,8 @@ class Network(nn.Module):
                 back_span_out.append(back_out[left_index] - back_out[right_index + 1])
             elif self.feature == "sum":
                 back_span_out.append(back_out[left_index : right_index + 1].sum(dim=0))
+            elif self.feature == "mean":
+                back_span_out.append(back_out[left_index : right_index + 1].mean(dim=0))
         # [N, lstm_units * struct_span]
         back_span_vec = torch.cat(back_span_out, dim=1)
 
@@ -189,6 +197,6 @@ class Network(nn.Module):
                 label_loss = self.criterion(scores, correct)
                 errors.append(label_loss)
 
-            batch_error = torch.stack(errors, dim=0).mean()
+        batch_error = torch.stack(errors, dim=0).mean()
 
         return batch_error
